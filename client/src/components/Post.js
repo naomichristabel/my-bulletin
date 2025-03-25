@@ -15,57 +15,28 @@ import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { doc, deleteDoc } from "firebase/firestore";
-import db from "../lib/firebase";
 
-const CLOUDINARY_CLOUD_NAME = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME;
-const CLOUDINARY_API_KEY = process.env.REACT_APP_CLOUDINARY_API_KEY;
-const CLOUDINARY_API_SECRET = process.env.REACT_APP_CLOUDINARY_API_SECRET;
+const API_URL = "http://localhost:5000"; // Backend API
 
-const Post = ({ post }) => {
+const Post = ({  post, onPostDeleted }) => {
   const [openDialog, setOpenDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const deleteAudioFromCloudinary = async (audioUrl) => {
-    if (!audioUrl) return;
-
-    const publicId = audioUrl.split("/").pop().split(".")[0];
-    const url = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/resources/video/upload`;
-
-    try {
-      const auth = btoa(`${CLOUDINARY_API_KEY}:${CLOUDINARY_API_SECRET}`);
-
-      const response = await fetch(url, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Basic ${auth}`,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({ public_id: publicId }),
-      });
-
-      const data = await response.json();
-      console.log("Cloudinary Delete Response:", data);
-    } catch (error) {
-      console.error("Error deleting file from Cloudinary:", error);
-    }
-  };
-
   const handleDeletePost = async () => {
-    setIsDeleting(true);
-
-    if (post.audioUrl) {
-      await deleteAudioFromCloudinary(post.audioUrl);
-    }
-
+    setIsDeleting(true); // ✅ Show "Deleting..."
     try {
-      await deleteDoc(doc(db, "posts", post.id));
-      console.log("Post deleted successfully from Firebase.");
+      const response = await fetch(`${API_URL}/api/posts/${post.id}`, {
+        method: "DELETE",
+      });
+  
+      if (!response.ok) throw new Error("Failed to delete post");
+  
+      onPostDeleted(post.id); // ✅ Remove post from UI
+      setOpenDialog(false);   // ✅ Close dialog after successful delete
     } catch (error) {
       console.error("Error deleting post:", error);
     } finally {
-      setIsDeleting(false);
-      setOpenDialog(false);
+      setIsDeleting(false); // ✅ Always reset loading state
     }
   };
 

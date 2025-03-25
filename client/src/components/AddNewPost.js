@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 import {
   Button,
   Dialog,
@@ -7,13 +7,12 @@ import {
   DialogTitle,
   TextField,
 } from "@mui/material";
-import db from "../lib/firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
+const API_URL = "http://localhost:5000"; // Backend server
 const CLOUDINARY_UPLOAD_URL = process.env.REACT_APP_CLOUDINARY_UPLOAD_URL;
 const CLOUDINARY_PRESET = process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET;
 
-const AddNewPost = () => {
+const AddNewPost = ({ onPostAdded }) => {  // <-- Accept onPostAdded as a prop
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -31,39 +30,32 @@ const AddNewPost = () => {
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      console.log("Microphone access granted:", stream);
-  
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
       let chunks = [];
-  
-      mediaRecorder.ondataavailable = (event) => {
-        console.log("Data available:", event.data);
-        chunks.push(event.data);
-      };
-  
+
+      mediaRecorder.ondataavailable = (event) => chunks.push(event.data);
+
       mediaRecorder.onstop = () => {
-        console.log("Recording stopped, processing blob...");
         const audioFile = new Blob(chunks, { type: "audio/webm" });
-        console.log("Audio Blob created:", audioFile);
         setAudioBlob(audioFile);
       };
-  
+
       mediaRecorder.start();
-      console.log("Recording started...");
       setIsRecording(true);
     } catch (error) {
       console.error("Error starting recording:", error);
     }
-  };  
+  };
 
   const stopRecording = () => {
     if (mediaRecorderRef.current) {
-      console.log("Stopping recording...");
       mediaRecorderRef.current.stop();
       setIsRecording(false);
-    } else {
-      console.log("No active recorder found.");
+    
+    // ✅ Stop and release the microphone stream
+    const tracks = mediaRecorderRef.current.stream.getTracks();
+    tracks.forEach(track => track.stop());  // 🔹 Stops the microphone
     }
   };
 
@@ -71,19 +63,18 @@ const AddNewPost = () => {
     const formData = new FormData();
     formData.append("file", blob);
     formData.append("upload_preset", CLOUDINARY_PRESET);
-    formData.append("resource_type", "raw"); // Ensure Cloudinary treats it as audio
-  
+    formData.append("resource_type", "raw");
+
     try {
       const response = await fetch(CLOUDINARY_UPLOAD_URL, {
         method: "POST",
         body: formData,
       });
-  
+
       if (!response.ok) throw new Error("Cloudinary upload failed");
-  
+
       const data = await response.json();
-      console.log("Cloudinary upload success:", data.secure_url);
-      return data.secure_url; // Return Cloudinary URL
+      return data.secure_url;
     } catch (error) {
       console.error("Error uploading audio to Cloudinary:", error);
       return null;
@@ -92,28 +83,20 @@ const AddNewPost = () => {
 
   const handleSubmit = async () => {
     if (!title.trim()) return;
-    console.log("Checking audioBlob before upload:", audioBlob);
 
-  if (!audioBlob) {
-    console.error("audioBlob is still null! Preventing upload.");
-    return;
-  }
-
-  setIsSaving(true);
-  let audioUrl = await uploadAudioToCloudinary(audioBlob);
-  console.log("Cloudinary upload success:", audioUrl);
+    setIsSaving(true);
+    let audioUrl = audioBlob ? await uploadAudioToCloudinary(audioBlob) : null;
 
     try {
-      await addDoc(collection(db, "posts"), {
-        title,
-        upVotesCount: 0,
-        downVotesCount: 0,
-        audioUrl,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+      const response = await fetch(`${API_URL}/api/posts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, audioUrl }),
       });
 
-      console.log("Post added successfully to Firestore.");
+      if (!response.ok) throw new Error("Failed to add post");
+
+      onPostAdded(); // ✅ Refresh posts after adding
       handleClose();
     } catch (error) {
       console.error("Error adding post:", error);
@@ -121,13 +104,6 @@ const AddNewPost = () => {
       setIsSaving(false);
     }
   };
-
-  useEffect(() => {
-    console.log("Updated state: audioBlob =", audioBlob);
-    if (audioBlob) {
-      console.log("audioBlob updated:", audioBlob);
-    }
-  }, [audioBlob]);
 
   return (
     <>
@@ -162,15 +138,17 @@ const AddNewPost = () => {
           </div>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose} disabled={isSaving}>Cancel</Button>
-          <Button 
-            onClick={handleSubmit} 
-            variant="contained" 
-            color="primary" 
-            disabled={!title.trim() || isSaving || (audioBlob === null)}
-            >
+          <Button onClick={handleClose} disabled={isSaving}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            variant="contained"
+            color="primary"
+            disabled={!title.trim() || isSaving || audioBlob === null}
+          >
             {isSaving ? "Saving..." : "Save"}
-            </Button>
+          </Button>
         </DialogActions>
       </Dialog>
     </>

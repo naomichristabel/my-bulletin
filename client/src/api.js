@@ -1,12 +1,19 @@
-import { collection, getDocs } from "firebase/firestore";
-import db from "./lib/firebase";
+const API_URL = "http://localhost:5000";
 
 export const fetchPosts = async () => {
-  try {
-    const querySnapshot = await getDocs(collection(db, "posts"));
-    return querySnapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
-  } catch (error) {
-    console.error("Error fetching posts:", error);
-    return [];
-  }
+  const response = await fetch(`${API_URL}/posts`);
+  return response.json();
+};
+
+export const createPost = async (postData) => {
+  const response = await fetch(`${API_URL}/posts`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(postData),
+  });
+  return response.json();
+};
+
+export const deletePost = async (id) => {
+  await fetch(`${API_URL}/posts/${id}`, { method: "DELETE" });
 };
