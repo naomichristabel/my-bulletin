@@ -8,7 +8,7 @@ import {
   TextField,
 } from "@mui/material";
 
-const API_URL = "http://localhost:5000"; // Backend server
+const API_URL =  process.env.REACT_APP_API_URL; // Backend server
 const CLOUDINARY_UPLOAD_URL = process.env.REACT_APP_CLOUDINARY_UPLOAD_URL;
 const CLOUDINARY_PRESET = process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET;
 

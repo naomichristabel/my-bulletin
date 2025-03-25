@@ -16,7 +16,7 @@ import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import DeleteIcon from "@mui/icons-material/Delete";
 
-const API_URL = "http://localhost:5000"; // Backend API
+const API_URL =  process.env.REACT_APP_API_URL; // Backend API
 
 const Post = ({  post, onPostDeleted }) => {
   const [openDialog, setOpenDialog] = useState(false);
