@@ -5,15 +5,23 @@ const express = require("express");
 const cors = require("cors");
 const admin = require("firebase-admin");
 const cloudinary = require("cloudinary").v2;
-const serviceAccount = require("./serviceAccountKey.json");
+// const serviceAccount = require("./serviceAccountKey.json");
 
 const app = express();
 const PORT = 5000;
 
+// admin.initializeApp({
+//   credential: admin.credential.cert(serviceAccount),
+//   projectId: serviceAccount.project_id, // Explicitly set the project ID
+//   databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`,
+// });
+
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  projectId: serviceAccount.project_id, // Explicitly set the project ID
-  databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`,
+  credential: admin.credential.cert({
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+  }),
 });
 
 const db = admin.firestore();
