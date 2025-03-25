@@ -19,13 +19,17 @@ const PORT = 5000;
 admin.initializeApp({
   credential: admin.credential.cert({
     projectId: process.env.FIREBASE_PROJECT_ID,
-    privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+    privateKey: process.env.FIREBASE_PRIVATE_KEY
+      ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n")
+      : undefined,
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
   }),
+  databaseURL: `https://${process.env.FIREBASE_PROJECT_ID}.firebaseio.com`,
+  projectId: process.env.FIREBASE_PROJECT_ID,
 });
 
 const db = admin.firestore();
-console.log("Firebase Project ID:", admin.instanceId().app.options.projectId);
+
 app.use(cors());
 app.use(express.json());
 

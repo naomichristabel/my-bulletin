@@ -5,38 +5,34 @@ import {
   Typography,
   IconButton,
   Stack,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
 } from "@mui/material";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import DeleteIcon from "@mui/icons-material/Delete";
+import DeleteDialog from "./DeleteDialog"; // Import the new DeleteDialog component
 
-const API_URL =  process.env.REACT_APP_API_URL; // Backend API
+const API_URL = process.env.REACT_APP_API_URL;
 
-const Post = ({  post, onPostDeleted }) => {
+const Post = ({ post, onPostDeleted }) => {
   const [openDialog, setOpenDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDeletePost = async () => {
-    setIsDeleting(true); // ✅ Show "Deleting..."
+    setIsDeleting(true);
     try {
       const response = await fetch(`${API_URL}/api/posts/${post.id}`, {
         method: "DELETE",
       });
-  
+
       if (!response.ok) throw new Error("Failed to delete post");
-  
-      onPostDeleted(post.id); // ✅ Remove post from UI
-      setOpenDialog(false);   // ✅ Close dialog after successful delete
+
+      onPostDeleted(post.id);
+      setOpenDialog(false);
     } catch (error) {
       console.error("Error deleting post:", error);
     } finally {
-      setIsDeleting(false); // ✅ Always reset loading state
+      setIsDeleting(false);
     }
   };
 
@@ -84,19 +80,13 @@ const Post = ({  post, onPostDeleted }) => {
         </CardContent>
       </Card>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
-        <DialogTitle>Delete Post</DialogTitle>
-        <DialogContent>
-          Are you sure you want to delete this post? This action cannot be undone.
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDialog(false)} disabled={isDeleting}>Cancel</Button>
-          <Button onClick={handleDeletePost} color="error" variant="contained" disabled={isDeleting}>
-            {isDeleting ? "Deleting..." : "Delete"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Reusable DeleteDialog */}
+      <DeleteDialog
+        open={openDialog}
+        onClose={() => setOpenDialog(false)}
+        onConfirm={handleDeletePost}
+        isDeleting={isDeleting}
+      />
     </>
   );
 };

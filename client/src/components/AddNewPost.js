@@ -1,18 +1,12 @@
 import React, { useState, useRef } from "react";
-import {
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  TextField,
-} from "@mui/material";
+import { Box, Button } from "@mui/material";
+import PostModal from "./PostModal"; // Import the new PostModal component
 
-const API_URL =  process.env.REACT_APP_API_URL; // Backend server
+const API_URL = process.env.REACT_APP_API_URL;
 const CLOUDINARY_UPLOAD_URL = process.env.REACT_APP_CLOUDINARY_UPLOAD_URL;
 const CLOUDINARY_PRESET = process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET;
 
-const AddNewPost = ({ onPostAdded }) => {  // <-- Accept onPostAdded as a prop
+const AddNewPost = ({ onPostAdded }) => {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -52,10 +46,9 @@ const AddNewPost = ({ onPostAdded }) => {  // <-- Accept onPostAdded as a prop
     if (mediaRecorderRef.current) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
-    
-    // ✅ Stop and release the microphone stream
-    const tracks = mediaRecorderRef.current.stream.getTracks();
-    tracks.forEach(track => track.stop());  // 🔹 Stops the microphone
+
+      const tracks = mediaRecorderRef.current.stream.getTracks();
+      tracks.forEach((track) => track.stop());
     }
   };
 
@@ -96,7 +89,7 @@ const AddNewPost = ({ onPostAdded }) => {  // <-- Accept onPostAdded as a prop
 
       if (!response.ok) throw new Error("Failed to add post");
 
-      onPostAdded(); // ✅ Refresh posts after adding
+      onPostAdded();
       handleClose();
     } catch (error) {
       console.error("Error adding post:", error);
@@ -107,50 +100,25 @@ const AddNewPost = ({ onPostAdded }) => {  // <-- Accept onPostAdded as a prop
 
   return (
     <>
-      <Button onClick={handleOpen} variant="contained" color="primary">
-        Add New Post
-      </Button>
+      <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
+        <Button onClick={handleOpen} variant="contained" color="primary">
+          Add New Post
+        </Button>
+      </Box>
 
-      <Dialog open={open} onClose={handleClose} fullWidth>
-        <DialogTitle>Add New Post</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Post Title"
-            type="text"
-            fullWidth
-            variant="outlined"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-          <div style={{ marginTop: "10px" }}>
-            {isRecording ? (
-              <Button onClick={stopRecording} color="secondary">
-                Stop Recording
-              </Button>
-            ) : (
-              <Button onClick={startRecording} color="primary">
-                Record Audio
-              </Button>
-            )}
-            {audioBlob && <p>Audio recorded. Ready to upload.</p>}
-          </div>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose} disabled={isSaving}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            variant="contained"
-            color="primary"
-            disabled={!title.trim() || isSaving || audioBlob === null}
-          >
-            {isSaving ? "Saving..." : "Save"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Reusable PostModal */}
+      <PostModal
+        open={open}
+        onClose={handleClose}
+        title={title}
+        setTitle={setTitle}
+        isSaving={isSaving}
+        isRecording={isRecording}
+        startRecording={startRecording}
+        stopRecording={stopRecording}
+        audioBlob={audioBlob}
+        handleSubmit={handleSubmit}
+      />
     </>
   );
 };
